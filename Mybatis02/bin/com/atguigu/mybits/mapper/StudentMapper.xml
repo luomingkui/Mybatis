@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+              
+<mapper namespace="com.atguigu.mybits.mapper.StudentMapper">
+
+	<update id="update1">
+		update students set Student_Name=#{StudentName},birth=#{birth} where StudentId=#{StudentId}
+	</update>
+
+	<delete id="delete1">
+		delete from students where Studentid=#{id}
+	</delete>
+
+	<insert id="save4" databaseId="mysql" keyProperty="StudentId" keyColumn="StudentId" useGeneratedKeys="true">
+		INSERT INTO students(Student_Name, birth)
+		VALUES(#{StudentName}, #{birth})
+	</insert>
+
+
+	<insert id="save3">
+		INSERT INTO students(Student_Name, birth)
+		VALUES(#{StudentName}, #{birth})
+	</insert>
+
+
+	<insert id="save2">
+		INSERT INTO students(Student_Name, birth)
+		VALUES(#{StudentName}, #{birth})
+	</insert>
+
+	<!-- 保存一条数据 -->
+	<insert id="save">
+		INSERT INTO students(Student_Name, birth)
+		VALUES(#{StudentName}, #{birth})
+	</insert>
+
+	<!-- 
+		映射一个查询语句 
+		1. id 唯一标识改查询语句. 可以通过当前映射文件的 namespace 和 id 来唯一的定位到当前的 select. 	
+		2. resultType 指定返回值的类型. 通常为全类名. 
+		3. 注意: 若类的属性名和数据表的列名不一致, 则可以使用别名
+	-->
+	<select id="selectStudent" resultType="com.atguigu.mybits.beans.Student">
+		select StudentId,Student_Name,birth from students where StudentId = #{id}
+	</select>
+	
+</mapper>

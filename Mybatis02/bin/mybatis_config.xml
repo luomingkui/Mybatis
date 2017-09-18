@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE configuration
+PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+	
+<!-- mybatis 的全局设置. 其中可以加入多个 setting 子节点 -->
+	<settings>
+		<!-- 
+			映射标准的列名和标准的 bean 的属性名的对应关系 
+			标准的列名: 多个单词使用 _ 进行连接
+			标准的属性名: 多个单词, 从第二个单词开始, 每个单词的首字母大写. 
+			例如 last_name 和 lastName
+		-->
+		<setting name="mapUnderscoreToCamelCase" value="true"/>
+	</settings>
+	
+
+</configuration>

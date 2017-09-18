@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+              
+<mapper namespace="com.atguigu.mybits.mapper.OrderMapper">
+
+
+
+	<!--  
+		动态 SQL.
+		1. 若查询条件中有 > 或 <, 则此部分代码需要放在 CDATA 中.
+		2. 使用 where 和 if 节点来构建动态 SQL.
+		1). 若 where 中的 if 一个都不满足, 则就不会添加 where 子句. 
+		2). 若 where 中有一个 if 满足条件, 则就会自动的生成 where 子句. 
+		且会根据实际情况, 删除 if 中的 AND 或 OR
+		3. 使用 foreach 可以完成 IN 操作符的效果. 
+		
+		<foreach collection="ids" item="id" open="(" close=")" separator=",">
+			#{id}
+		</foreach>
+		
+		若传入的 ids 为 {1,2,3,4} 生成后的效果如下
+		
+		(1,2,3,4)
+	-->                                   
+	<select id="testForEach" resultType="com.atguigu.mybits.beans.Order">
+		SELECT order_Id, order_Name
+		FROM orders
+		WHERE order_Id IN 
+		<foreach collection="ids" item="orderId" open="(" close=")" separator=",">
+			#{orderId}
+		</foreach>
+	</select>
+	
+	
+	<select id="testIf" resultType="com.atguigu.mybits.beans.Order">
+		SELECT order_Id,order_Name
+		FROM orders
+		<where>
+			<if test="minId != null">
+				order_Id>= #{minId}
+			</if>
+			<if test="maxId != null">
+			<![CDATA[
+				AND order_Id<= #{maxId}
+			]]>
+			</if>
+		</where>
+	</select>
+
+
+
+	<!--  
+		映射集合属性, 也可以分两条语句.
+		使用 collection 映射集合属性!
+		1. 使用 select 标记使用的另一条 SQL 的 id
+		2. 若使用了 select 属性, 则不能再使用 javaType 来标记集合中元素的类型, 而要使用 ofType. 
+		3. 使用 column 传递 select 对应 SQL 中的参数. 通常为当前 SQL 的主键列的列名. 
+		4. 若需要对关联的集合对象使用懒加载, 则需要设置 collection 的 fetchType 属性为 lazy. 默认为 eager. 
+	-->
+	<select id="selectCustomer3" resultMap="customerMap3">
+		SELECT c.customer_Id,customer_Name
+		FROM customers c
+		WHERE c.customer_Id = #{customerId}
+	</select>
+	
+	<resultMap type="com.atguigu.mybits.beans.Customer" id="customerMap3">
+		<id column="customer_Id" property="customerId"/>
+		<result column="customer_Name" property="customerName"/>
+		
+		<collection property="orders" ofType="com.atguigu.mybits.beans.Order"
+			select="selectOrder" column="order_Id" fetchType="lazy">
+		</collection>
+	</resultMap>
+	
+	<select id="selectOrder" resultType="com.atguigu.mybits.beans.Order">
+		SELECT order_Id, order_Name
+		FROM orders
+		WHERE order_Id = #{orderId}
+	</select>
+	
+
+	<select id="selectCustomer2" resultMap="customerMap2">
+		SELECT c.customer_Id, customer_Name, o.order_Id AS "o.orderId",order_Name
+		FROM customers c
+		LEFT OUTER JOIN orders o
+		ON o.customer_Id = c.customer_Id
+		WHERE o.customer_Id= #{customerId}
+	</select>
+	
+	<resultMap type="com.atguigu.mybits.beans.Customer" id="customerMap2">
+		<id column="customer_Id" property="customerId"/>
+		<result column="customer_Name" property="customerName"/>
+		
+		<!-- 映射集合属性 -->
+		<collection property="orders" javaType="com.atguigu.mybits.beans.Order">
+			<id column="o.orderId" property="orderId"/>
+			<result column="order_Name" property="orderName"/>
+		</collection>
+	</resultMap>
+
+
+<!-- ....................................................................... -->
+
+	<!--  
+		注意: 只要有列名相同的, 一定要为列名起别名!
+		使用外连接查询时, 除了使用别名映射关联 bean 外, 也可以使用 association 完成手动的映射
+		 映射集合属性, 不能使用别名, 必须使用 resultMap!
+	-->
+	<select id="testAssociation3" resultMap="orderMap3">
+		SELECT o.order_Id, order_Name, c.customer_Id AS "c.customerId", customer_Name
+		FROM orders o
+		LEFT OUTER JOIN customers c
+		ON o.customer_Id = c.customer_Id
+		WHERE o.order_Id= #{orderId}
+	</select>
+	
+	<resultMap type="com.atguigu.mybits.beans.Order" id="orderMap3">
+		<id column="order_Id" property="orderId"/>
+		<result column="order_Name" property="orderName"/>
+		<association property="customer" javaType="com.atguigu.mybits.beans.Customer">
+			<id column="c.customerId" property="customerId"/>
+			<result column="customer_Name" property="customerName"/>
+		</association>
+	</resultMap>
+	
+	
+	
+	
+	
+	
+	<!-- 使用懒加载完成级联属性的查询 -->
+	<select id="testAssociation2" resultMap="orderMap2">
+		SELECT order_Id,order_Name,customer_id
+			FROM orders 
+			WHERE order_Id=#{orderId}
+	</select>
+	
+	<resultMap type="com.atguigu.mybits.beans.Order" id="orderMap2"> 
+		<id column="order_Id" property="orderId"/>
+		<result column="order_Name" property="orderName"/>
+			<!--  
+				property: 关联属性的属性名
+				select: 使用的 select 查询的 id
+				javaType: 返回的类型
+				column: 若额外的 select 需要传递参数, 则使用 column 标记把当前查询到的那一列的列值传递过去. 
+			-->
+		<association property="customer"
+		 select="selectCustomer"
+		 column="customer_Id"
+		javaType="com.atguigu.mybits.beans.Customer">
+		</association>
+	</resultMap>
+	<!--  
+		如何实现懒加载的效果.
+		需要在 mybatis-config.xml 文件中设置两个属性
+		lazyLoadingEnabled: true. 启用懒加载. 
+		aggressiveLazyLoading: false. 默认值为 true： 若加载当前 bean的一个属性, 则会侵略性的加载其所有关联的属性. 
+		即若只需要其 id 属性, 则默认情况下, 也会初始化其关联的 customer 属性. 
+	-->
+	<select id="selectCustomer" resultType="com.atguigu.mybits.beans.Customer">
+		SELECT customer_Id, customer_Name
+		FROM customers 
+		WHERE customer_Id = #{customerId}
+	</select>
+
+
+<!--  
+	如何分两条 SQL 语句来初始化关联的对象呢 ? 即也有 hibernate 的懒加载的效果.
+	需要学习:
+	1. resultMap: 结果映射. 把查询的结果映射为对应的 bean 的属性. 
+	2. 一般的, 若只查询单表, 则不需要使用 resultMap. 
+	3. resultMap 和 resultType 只能选用其一. 
+-->
+	<select id="testResultMap" resultMap="orderMap">
+		SELECT order_Id, order_Name
+			FROM orders
+			WHERE order_Id = #{orderId}
+	</select>
+	
+	<resultMap type="com.atguigu.mybits.beans.Order" id="orderMap">
+	<!-- 映射Id -->
+	<id column="order_Id" property="orderId"/>
+	<!-- 映射Id以外的属性 -->
+	<result column="order_Name" property="orderName"/>
+	</resultMap>
+	
+<!-- ....................................................................... -->
+	
+<!-- 
+	如何在查询出 bean 对象时, 也能查询出其关联的 1 的一端的对象. 
+	1. 可以通过 "别名" 的方式为关联的 bean 的属性赋值.
+	customer_id AS "customer.id" 意为: 把查询的 customer_id 赋给当前 bean 的 customer 的 id 属性. 
+	2. 可以使用外连接查询得到关联对象的属性. 
+	3. jdbcTemplate 和 dbutils 不支持!
+	
+	内连接(INNER JOIN): 只有满足链接条件的记录才会被查询出来. 
+	左外链接(LEFT OUTER JOIN): 左表(即 LEFT OUTER JOIN 之前的那个数据表)的记录无论是否满足链接条件都会被查询出来.
+-->
+
+<select id="testAssociation" resultType="com.atguigu.mybits.beans.Order">
+	SELECT o.order_Id,order_Name,o.customer_Id AS "customer.customerId",customer_Name AS "customer.customer_Name"
+	FROM orders o
+	LEFT OUTER JOIN customers c
+	ON c.customer_id = o.customer_id
+	WHERE o.order_Id=#{orderId}	
+</select>
+
+<!-- ....................................................................... -->
+<!-- 
+	1.在编写 mybatis 的变量时, 可以使用属性的级联 
+	#{customer.id}: 传入的参数有一个 customer 属性, customer 属性对应的类型还有一个 id 属性. 
+	
+	2.在 mybatis 中没有持久化状态的这一个概念. 所以
+	1). 默认情况下, 在 insert 后, 不会为 bean 的 id 赋值
+	2). 不能通过修改 bean 对象的属性来修改数据表的内容.
+-->
+
+<insert id="save" keyColumn="id" keyProperty="id" useGeneratedKeys="true">
+	INSERT INTO orders(order_Name,customer_Id)
+	VALUES(#{orderName},#{customer.customerId})
+</insert>
+
+
+<select id="getAll" resultType="com.atguigu.mybits.beans.Order">
+	SELECT order_Id,order_Name FROM orders
+</select>
+	
+</mapper>
